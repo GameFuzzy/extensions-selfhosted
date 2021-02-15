@@ -1,17 +1,17 @@
 import {LanguageCode, SourceInfo, TagType} from "paperback-extensions-common";
-import {Madara} from '../Madara'
+import {Genkan} from '../Genkan'
 
-const MANGATX_DOMAIN = "https://mangatx.com"
+const LEVIATANSCANS_DOMAIN = "https://leviatanscans.com"
 
-export const MangaTXInfo: SourceInfo = {
+export const LeviatanscansInfo: SourceInfo = {
     version: '1.0.0',
-    name: 'MangaTX',
-    description: 'Extension that pulls manga from mangatx.com',
+    name: 'Leviatanscans',
+    description: 'Extension that pulls manga from leviatanscans.com',
     author: 'GameFuzzy',
     authorWebsite: 'http://github.com/gamefuzzy',
     icon: "icon.png",
     hentaiSource: false,
-    websiteBaseURL: MANGATX_DOMAIN,
+    websiteBaseURL: LEVIATANSCANS_DOMAIN,
     sourceTags: [
         {
             text: "Notifications",
@@ -20,8 +20,7 @@ export const MangaTXInfo: SourceInfo = {
     ]
 }
 
-export class MangaTX extends Madara {
-    baseUrl: string = MANGATX_DOMAIN
+export class Leviatanscans extends Genkan {
+    baseUrl: string = LEVIATANSCANS_DOMAIN
     languageCode: LanguageCode = LanguageCode.ENGLISH
-    hasAdvancedSearchPage = true
 }

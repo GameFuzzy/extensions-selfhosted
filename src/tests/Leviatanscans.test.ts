@@ -1,13 +1,13 @@
 import cheerio from 'cheerio'
-import { MadaraAPIWrapper } from '../MadaraAPIWrapper'
-import { Madara } from '../Madara'
-import { Toonily } from '../Toonily/Toonily'
+import { Genkan } from '../Genkan'
+import { Leviatanscans } from '../Leviatanscans/Leviatanscans'
+import { APIWrapper } from "paperback-extensions-common";
 
-describe('Toonily Tests', function () {
+describe('Leviatanscans Tests', function () {
 
 
-    var wrapper: MadaraAPIWrapper = new MadaraAPIWrapper();
-    var source: Madara = new Toonily(cheerio);
+    var wrapper: APIWrapper = new APIWrapper();
+    var source: Genkan = new Leviatanscans(cheerio);
     var chai = require('chai'), expect = chai.expect, should = chai.should();
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
@@ -17,21 +17,7 @@ describe('Toonily Tests', function () {
      * Try to choose a manga which is updated frequently, so that the historical checking test can
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "ones-in-laws-virgins";
-    var mangaNumericId = ''
-
-    // Grab the ID automatically
-    before(async () =>
-    {
-        if(mangaNumericId === '') {
-            try{
-                mangaNumericId = await wrapper.getMadaraNumericId(source, mangaId)
-            }
-            catch {
-                console.log(`Could not automatically retrieve the numeric id for "${mangaId}". Try entering it manually.`)
-            }
-        }
-    })
+    var mangaId = "743957-the-origin";
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, mangaId);
@@ -42,14 +28,13 @@ describe('Toonily Tests', function () {
         expect(data.id, "Missing ID").to.be.not.empty;
         expect(data.image, "Missing Image").to.be.not.empty;
         expect(data.status, "Missing Status").to.exist;
-        expect(data.author, "Missing Author").to.be.not.empty;
         expect(data.desc, "Missing Description").to.be.not.empty;
         expect(data.titles, "Missing Titles").to.be.not.empty;
         expect(data.rating, "Missing Rating").to.exist;
     });
 
     it("Get Chapters", async () => {
-        let data = await wrapper.getChapters(source, mangaNumericId);
+        let data = await wrapper.getChapters(source, mangaId);
         expect(data, "No chapters present for: [" + mangaId + "]").to.not.be.empty;
 
         let entry = data[0]
@@ -60,7 +45,7 @@ describe('Toonily Tests', function () {
     });
 
     it("Get Chapter Details", async () => {
-        let chapters = await wrapper.getChapters(source, mangaNumericId);
+        let chapters = await wrapper.getChapters(source, mangaId);
         let data = await wrapper.getChapterDetails(source, mangaId, chapters[0].id);
 
         expect(data, "No server response").to.exist;
@@ -73,7 +58,7 @@ describe('Toonily Tests', function () {
 
     it("Testing search", async () => {
         let testSearch = createSearchRequest({
-            title: 'he'
+            title: 'the origin'
         });
 
         let search = await wrapper.searchRequest(source, testSearch, {page: 0});
@@ -110,12 +95,6 @@ describe('Toonily Tests', function () {
         expect(updates, "No server response").to.exist
         expect(updates, "Empty server response").to.not.be.empty
         expect(updates[0], "No updates").to.not.be.empty;
-    })
-
-    it("Testing get tags", async () => {
-        let updates = await wrapper.getTags(source)
-        expect(updates, "No server response").to.exist
-        expect(updates, "Empty server response").to.not.be.empty
     })
 
 })
