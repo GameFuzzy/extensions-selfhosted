@@ -1,13 +1,13 @@
 import cheerio from 'cheerio'
 import { Genkan } from '../Genkan'
-import { Leviatanscans } from '../Leviatanscans/Leviatanscans'
+import { LeviatanScans } from '../LeviatanScans/LeviatanScans'
 import { APIWrapper } from "paperback-extensions-common";
 
-describe('Leviatanscans Tests', function () {
+describe('LeviatanScans Tests', function () {
 
 
     var wrapper: APIWrapper = new APIWrapper();
-    var source: Genkan = new Leviatanscans(cheerio);
+    var source: Genkan = new LeviatanScans(cheerio);
     var chai = require('chai'), expect = chai.expect, should = chai.should();
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
@@ -17,7 +17,7 @@ describe('Leviatanscans Tests', function () {
      * Try to choose a manga which is updated frequently, so that the historical checking test can
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "743957-the-origin";
+    var mangaId = "217553-6-worlds-of-cultivation";
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, mangaId);
@@ -79,7 +79,7 @@ describe('Leviatanscans Tests', function () {
 
 
     it("Testing home page results for latest titles", async() => {
-        let results = await wrapper.getViewMoreItems(source, "1", {}, 3)
+        let results = await wrapper.getViewMoreItems(source, "0", {}, 3)
 
         expect(results, "No results whatsoever for this section").to.exist
         expect(results, "No results whatsoever for this section").to.exist

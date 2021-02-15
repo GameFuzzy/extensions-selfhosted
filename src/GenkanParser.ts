@@ -11,7 +11,7 @@ export class Parser {
 
     parseMangaDetails($: CheerioSelector, mangaId: string, source: any): Manga {
         let title = this.decodeHTMLEntity($("div#content h5").first().text().trim())
-        let summary = this.decodeHTMLEntity($("div.col-lg-9").text().split("Description\n")[1].split(" Volume")[0].trim())
+        let summary = this.decodeHTMLEntity($("div.col-lg-9").text().split("Description\n")[1].split("Volume")[0].trim())
         let image = encodeURI(this.getImageSrc($("div.media a").first(), source.baseUrl))
         let views = Number($('.fa-eye').text() ?? 0)
         let lastUpdate, hentai
@@ -95,6 +95,9 @@ export class Parser {
             longStrip: false
         })
     }
+    parseSearchSection($: CheerioStatic, source: any, collectedIds?: string[]): MangaTile[] {
+        return this.parseHomeSection($, source, collectedIds)
+    }
 
     parseHomeSection($: CheerioStatic, source: any, collectedIds?: string[]): MangaTile[] {
         let items: MangaTile[] = []
@@ -107,7 +110,7 @@ export class Parser {
             let id = $('a.list-title', $(obj)).attr('href')?.replace(`${source.baseUrl}/comics/`, '').split('/')[0]
 
             if (!id || !title || !image) {
-                throw(`Failed to parse homepage sections for ${source.baseUrl}/${source.homePage}/`)
+                throw(`Failed to parse homepage sections for ${source.baseUrl}/`)
             }
             if (!collectedIds.includes(id)) {
                 items.push(createMangaTile({

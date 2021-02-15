@@ -1,17 +1,17 @@
 import {LanguageCode, SourceInfo, TagType} from "paperback-extensions-common";
-import {Genkan} from '../Genkan'
+import {GenkanLegacy} from "../GenkanLegacy";
 
-const LEVIATANSCANS_DOMAIN = "https://leviatanscans.com"
+const REAPERSCANS_DOMAIN = "https://reaperscans.com"
 
-export const LeviatanscansInfo: SourceInfo = {
+export const ReaperScansInfo: SourceInfo = {
     version: '1.0.0',
-    name: 'Leviatanscans',
-    description: 'Extension that pulls manga from leviatanscans.com',
+    name: 'ReaperScans',
+    description: 'Extension that pulls manga from reaperscans.com',
     author: 'GameFuzzy',
     authorWebsite: 'http://github.com/gamefuzzy',
     icon: "icon.png",
     hentaiSource: false,
-    websiteBaseURL: LEVIATANSCANS_DOMAIN,
+    websiteBaseURL: REAPERSCANS_DOMAIN,
     sourceTags: [
         {
             text: "Notifications",
@@ -20,7 +20,7 @@ export const LeviatanscansInfo: SourceInfo = {
     ]
 }
 
-export class Leviatanscans extends Genkan {
-    baseUrl: string = LEVIATANSCANS_DOMAIN
+export class ReaperScans extends GenkanLegacy {
+    baseUrl: string = REAPERSCANS_DOMAIN
     languageCode: LanguageCode = LanguageCode.ENGLISH
 }

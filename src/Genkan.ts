@@ -84,7 +84,7 @@ export abstract class Genkan extends Source {
         })
         let data = await this.requestManager.schedule(request, 1)
         let $ = this.cheerio.load(data.data)
-        let manga = this.parser.parseHomeSection($, this)
+        let manga = this.parser.parseSearchSection($, this)
         let mData: any = {page: (page + 1)}
         if (this.parser.isLastPage($)) {
             mData = undefined
@@ -110,7 +110,7 @@ export abstract class Genkan extends Source {
             let $ = this.cheerio.load(data.data)
 
             let updatedManga = this.parser.filterUpdatedManga($, time, ids, this)
-            loadNextPage = updatedManga.loadNextPage
+            loadNextPage = updatedManga.loadNextPage && !this.parser.isLastPage($)
             if (loadNextPage) {
                 page++
             }
@@ -132,7 +132,7 @@ export abstract class Genkan extends Source {
         const sections = [
             {
                 request: createRequestObject({
-                    url: `${this.baseUrl}/comics?page=0`,
+                    url: `${this.baseUrl}/latest?page=0`,
                     method: 'GET',
                     headers: this.constructHeaders({})
                 }),
@@ -144,7 +144,7 @@ export abstract class Genkan extends Source {
             },
             {
                 request: createRequestObject({
-                    url: `${this.baseUrl}/latest?page=0`,
+                    url: `${this.baseUrl}/comics?page=0`,
                     method: 'GET',
                     headers: this.constructHeaders({})
                 }),
@@ -181,11 +181,11 @@ export abstract class Genkan extends Source {
         let sortBy = ''
         switch (homepageSectionId) {
             case '0': {
-                sortBy = `comics`
+                sortBy = `latest`
                 break
             }
             case '1': {
-                sortBy = `latest`
+                sortBy = `comics`
                 break
             }
             default:
@@ -258,7 +258,9 @@ export abstract class Genkan extends Source {
             time = new Date(Date.now() - trimmed * 86400000)
         } else if (timeAgo.includes('weeks') || timeAgo.includes('week')) {
             time = new Date(Date.now() - trimmed * 604800000)
-        } else if (timeAgo.includes('year') || timeAgo.includes('years')) {
+        } else if (timeAgo.includes('months') || timeAgo.includes('month')) {
+            time = new Date(Date.now() - trimmed * 2548800000)
+        } else if (timeAgo.includes('years') || timeAgo.includes('year')) {
             time = new Date(Date.now() - trimmed * 31556952000)
         } else {
             time = new Date(timeAgo)
