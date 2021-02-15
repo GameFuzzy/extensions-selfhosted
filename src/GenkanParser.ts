@@ -161,7 +161,7 @@ export class Parser {
                 sortedChapters.push(c)
             }
         })
-        sortedChapters.sort((a, b) => (a.chapNum - b.chapNum) ? -1 : 1)
+        sortedChapters.sort((a, b) => ((a?.volume ?? 0) - (b?.volume ?? 0) ? -1 : 1 || a?.chapNum - b?.chapNum ? -1 : 1))
         return sortedChapters
     }
 
