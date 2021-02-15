@@ -166,8 +166,8 @@ export class Parser {
     }
 
     getImageSrc(imageObj: Cheerio | undefined, baseUrl: string): string {
-        let isFullLink = imageObj?.attr('style')?.startsWith('http')
         let trimmedLink = imageObj?.attr('style')?.split('(')[1]?.split(')')[0]
+        let isFullLink = trimmedLink?.startsWith('http')
         let image = isFullLink ? trimmedLink : baseUrl + trimmedLink
         return image ?? ''
     }
