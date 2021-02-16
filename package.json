@@ -1,7 +1,8 @@
 {
   "name": "madara-extensions",
   "version": "1.0.0",
-  "description": "Additional sources for Paperback using the Madara template",
+  "repositoryName": "Extensions Genkan",
+  "description": "Additional sources for Paperback using the Genkan template",
   "scripts": {
     "start": "tsc && node dist/api.js",
     "build": "tsc",
