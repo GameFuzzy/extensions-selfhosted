@@ -65,7 +65,7 @@ export class Parser {
                 langCode: source.languageCode ?? LanguageCode.UNKNOWN,
                 volume: Number.isNaN(volume) ? 0 : volume,
                 chapNum: Number.isNaN(chapNum) ? 0 : chapNum,
-                name: Number.isNaN(chapNum) ? chapName : '',
+                name: chapName.match(/Chapter \d*/) ? undefined : chapName,
                 time: releaseDate
             }))
         }
