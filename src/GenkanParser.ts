@@ -65,7 +65,7 @@ export class Parser {
                 langCode: source.languageCode ?? LanguageCode.UNKNOWN,
                 volume: Number.isNaN(volume) ? 0 : volume,
                 chapNum: Number.isNaN(chapNum) ? 0 : chapNum,
-                name: chapName.match(/Chapter \d*/) ? undefined : chapName,
+                name: chapName.match(/Chapter \d*/) ? undefined : this.decodeHTMLEntity(chapName),
                 time: releaseDate
             }))
         }
@@ -155,12 +155,7 @@ export class Parser {
 
     // Chapter sorting
     sortChapters(chapters: Chapter[]): Chapter[] {
-        let sortedChapters: Chapter[] = []
-        chapters.forEach((c) => {
-            if (sortedChapters[sortedChapters.indexOf(c)]?.id !== c?.id) {
-                sortedChapters.push(c)
-            }
-        })
+        let sortedChapters = chapters.filter((obj, index, arr) => arr.map(mapObj => mapObj.id).indexOf(obj.id) === index)
         sortedChapters.sort((a, b) => ((a?.volume ?? 0) - (b?.volume ?? 0) ? -1 : 1 || a?.chapNum - b?.chapNum ? -1 : 1))
         return sortedChapters
     }
