@@ -2545,7 +2545,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
             let sortBy = '';
             switch (homepageSectionId) {
                 case '0': {
-                    sortBy = `latest`;
+                    sortBy = `api/search?`;
                     break;
                 }
                 case '1': {
