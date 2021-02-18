@@ -1,13 +1,13 @@
 import cheerio from 'cheerio'
-import { Genkan } from '../Genkan'
-import { TheNonamesScans } from '../TheNonamesScans/TheNonamesScans'
+import { Source } from 'paperback-extensions-common'
+import { LANraragi } from '../LANraragi/LANraragi'
 import { APIWrapper } from "paperback-extensions-common";
 
-describe('TheNonamesScans Tests', function () {
+describe('LANraragi Tests', function () {
 
 
     var wrapper: APIWrapper = new APIWrapper();
-    var source: Genkan = new TheNonamesScans(cheerio);
+    var source: Source = new LANraragi(cheerio);
     var chai = require('chai'), expect = chai.expect, should = chai.should();
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
@@ -17,7 +17,7 @@ describe('TheNonamesScans Tests', function () {
      * Try to choose a manga which is updated frequently, so that the historical checking test can
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "241705-danshi-koukousei-wo-yashinaitai-onee-san-no-hanashi";
+    var mangaId = "6646c24b0951483ff23709452e130ed2bc85defb";
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, mangaId);
@@ -28,7 +28,6 @@ describe('TheNonamesScans Tests', function () {
         expect(data.id, "Missing ID").to.be.not.empty;
         expect(data.image, "Missing Image").to.be.not.empty;
         expect(data.status, "Missing Status").to.exist;
-        expect(data.desc, "Missing Description").to.be.not.empty;
         expect(data.titles, "Missing Titles").to.be.not.empty;
         expect(data.rating, "Missing Rating").to.exist;
     });
@@ -39,8 +38,6 @@ describe('TheNonamesScans Tests', function () {
 
         let entry = data[0]
         expect(entry.id, "No ID present").to.not.be.empty;
-        expect(entry.time, "No date present").to.exist
-        // expect(entry.name, "No title available").to.not.be.empty
         expect(entry.chapNum, "No chapter number present").to.exist
     });
 
@@ -58,7 +55,7 @@ describe('TheNonamesScans Tests', function () {
 
     it("Testing search", async () => {
         let testSearch = createSearchRequest({
-            title: 'koukousei'
+            title: 'a'
         });
 
         let search = await wrapper.searchRequest(source, testSearch, {page: 0});
@@ -88,13 +85,6 @@ describe('TheNonamesScans Tests', function () {
         expect(data.id, "No ID present").to.exist
         expect(data.image, "No image present").to.exist
         expect(data.title.text, "No title present").to.exist
-    })
-
-    it("Testing Notifications", async () => {
-        let updates = await wrapper.filterUpdatedManga(source, new Date("2021-02-01"), [mangaId])
-        expect(updates, "No server response").to.exist
-        expect(updates, "Empty server response").to.not.be.empty
-        expect(updates[0], "No updates").to.not.be.empty;
     })
 
 })

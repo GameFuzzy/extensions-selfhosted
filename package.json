@@ -1,8 +1,8 @@
 {
-  "name": "madara-extensions",
+  "name": "selfhosted-extensions",
   "version": "1.0.0",
-  "repositoryName": "Extensions Genkan",
-  "description": "Additional sources for Paperback using the Genkan template",
+  "repositoryName": "Extensions Self-Hosted",
+  "description": "Self-hosted sources for Paperback",
   "scripts": {
     "start": "tsc && node dist/api.js",
     "build": "tsc",
