@@ -17,7 +17,7 @@ describe('LANraragi Tests', function () {
      * Try to choose a manga which is updated frequently, so that the historical checking test can
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "6646c24b0951483ff23709452e130ed2bc85defb";
+    var mangaId = "fa74bc15e7dd2b6ec0dc2e10cc7cd4942867318a";
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, mangaId);

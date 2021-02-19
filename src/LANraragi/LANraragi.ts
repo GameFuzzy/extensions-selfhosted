@@ -174,7 +174,7 @@ export class LANraragi extends Source {
             },
             {
                 request: createRequestObject({
-                    url: `${LANRARAGI_DOMAIN}/api/search?newonly=true`,
+                    url: `${LANRARAGI_DOMAIN}/api/search?newonly=true&order=date_added`,
                     method: 'GET',
                     headers: this.constructHeaders({})
                 }),
@@ -243,7 +243,7 @@ export class LANraragi extends Source {
     base64Encode = (str: string): string => Buffer.from(str, 'binary').toString('base64')
 
     constructHeaders(headers: any): any {
-        if (APIKEY !== '') {
+        if (APIKEY.length != 0) {
             headers["Authorization"] = `Bearer ${this.base64Encode(APIKEY)}`
         }
         headers["accept"] = 'application/json'
@@ -253,7 +253,7 @@ export class LANraragi extends Source {
 
     globalRequestHeaders(): RequestHeaders {
         let headers: any = {}
-        if (APIKEY !== '') {
+        if (APIKEY.length != 0) {
             headers["Authorization"] = `Bearer ${this.base64Encode(APIKEY)}`
         }
         headers["accept"] = "image/avif,image/apng,image/jpeg;q=0.9,image/png;q=0.9,image/*;q=0.8"

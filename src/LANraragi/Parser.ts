@@ -20,8 +20,8 @@ export class Parser {
             desc: '',
             image: `${source.baseUrl}/api/archives/${mangaId}/thumbnail`,
             status: MangaStatus.ONGOING,
-            rating: this.getNSTag(json.tags, 'artist')[1]?.split('⭐').length - 1 ?? 0,
-            lastUpdate: json.isNew ? new Date(Date.now() - 604800000).toString() : undefined
+            rating: this.getNSTag(json.tags, 'rating')[1]?.split('⭐').length - 1 ?? 0,
+            lastUpdate: this.getDateAdded(json.tags).toString()
         })
     }
 
@@ -36,16 +36,19 @@ export class Parser {
                     group: this.getNSTag(manga.tags, 'group')[1],
                     langCode: reverseLangCode[this.getNSTag(manga.tags, 'language')[1]?.toUpperCase() ?? 'ENGLISH'],
                     mangaId: mangaId,
+                    time: this.getDateAdded(manga.tags)
                 }))
             }
         }
 
         return chapters.length != 0 ? chapters : [createChapter({
-            id: mangaId,
+            id: mangaData.arcid,
             chapNum: 1,
             name: 'Archive',
-            langCode: LanguageCode.ENGLISH,
-            mangaId: mangaId
+            group: this.getNSTag(mangaData.tags, 'group')[1],
+            langCode: reverseLangCode[this.getNSTag(mangaData.tags, 'language')[1]?.toUpperCase() ?? 'ENGLISH'],
+            mangaId: mangaId,
+            time: this.getDateAdded(mangaData.tags)
         })]
     }
 
@@ -76,29 +79,10 @@ export class Parser {
         return (results)
     }
 
-    /*
-        filterUpdatedManga(json: any): string[] {
-            let collectedUpdates: {id: string, parodyTag: string}[] = []
-            let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
-            for (let result of sortedJson) {
-                let parodyTag = this.getNSTag(result.tags, 'parody')[1]?.replace(/\d*$/, '')?.trim()?.toLowerCase()
-                let matchingUpdate = collectedUpdates.filter(updates => updates.parodyTag === parodyTag)
-                if(matchingUpdate.length < 1) {
-                    collectedUpdates.push({id: result.arcid, parodyTag: parodyTag})
-                }
-                else {
-                    collectedUpdates.push(matchingUpdate[0])
-                }
-            }
-            return (collectedUpdates.map(update => update.id))
-
-        }
-    */
-
     // UTILITY METHODS
 
     getNSTag(tags: string, tag: string): string[] {
-        let NSTag = tags.split(',')
+        let NSTag = tags.split(',') ?? ''
         for (let index of NSTag) {
             if (index.includes(':')) {
                 let temp: string[] = index.trim().split(":", 2)
@@ -106,6 +90,10 @@ export class Parser {
             }
         }
         return []
+    }
+
+    getDateAdded(tags: any) {
+        return new Date(Number(this.getNSTag(tags, 'date_added')?.pop()?.padEnd(13, '0') ?? Date.now()))
     }
 
     isLastPage(json: any): boolean {
