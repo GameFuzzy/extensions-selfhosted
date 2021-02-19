@@ -2512,7 +2512,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                 },
                 {
                     request: createRequestObject({
-                        url: `${LANRARAGI_DOMAIN}/api/search?newonly=true`,
+                        url: `${LANRARAGI_DOMAIN}/api/search?newonly=true&order=date_added`,
                         method: 'GET',
                         headers: this.constructHeaders({})
                     }),
@@ -2574,7 +2574,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
         });
     }
     constructHeaders(headers) {
-        if (APIKEY !== '') {
+        if (APIKEY.length != 0) {
             headers["Authorization"] = `Bearer ${this.base64Encode(APIKEY)}`;
         }
         headers["accept"] = 'application/json';
@@ -2582,7 +2582,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
     }
     globalRequestHeaders() {
         let headers = {};
-        if (APIKEY !== '') {
+        if (APIKEY.length != 0) {
             headers["Authorization"] = `Bearer ${this.base64Encode(APIKEY)}`;
         }
         headers["accept"] = "image/avif,image/apng,image/jpeg;q=0.9,image/png;q=0.9,image/*;q=0.8";
@@ -2664,12 +2664,12 @@ class Parser {
             desc: '',
             image: `${source.baseUrl}/api/archives/${mangaId}/thumbnail`,
             status: paperback_extensions_common_1.MangaStatus.ONGOING,
-            rating: (_d = ((_c = this.getNSTag(json.tags, 'artist')[1]) === null || _c === void 0 ? void 0 : _c.split('⭐').length) - 1) !== null && _d !== void 0 ? _d : 0,
-            lastUpdate: json.isNew ? new Date(Date.now() - 604800000).toString() : undefined
+            rating: (_d = ((_c = this.getNSTag(json.tags, 'rating')[1]) === null || _c === void 0 ? void 0 : _c.split('⭐').length) - 1) !== null && _d !== void 0 ? _d : 0,
+            lastUpdate: this.getDateAdded(json.tags).toString()
         });
     }
     parseChapters(json, mangaId, mangaData) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f, _g;
         let chapters = [];
         for (let manga of json) {
             if (manga.tags.includes((_a = this.getNSTag(mangaData.tags, 'parody')[1]) === null || _a === void 0 ? void 0 : _a.replace(/\d*$/, '').trim())) {
@@ -2680,15 +2680,18 @@ class Parser {
                     group: this.getNSTag(manga.tags, 'group')[1],
                     langCode: Languages_1.reverseLangCode[(_e = (_d = this.getNSTag(manga.tags, 'language')[1]) === null || _d === void 0 ? void 0 : _d.toUpperCase()) !== null && _e !== void 0 ? _e : 'ENGLISH'],
                     mangaId: mangaId,
+                    time: this.getDateAdded(manga.tags)
                 }));
             }
         }
         return chapters.length != 0 ? chapters : [createChapter({
-                id: mangaId,
+                id: mangaData.arcid,
                 chapNum: 1,
                 name: 'Archive',
-                langCode: paperback_extensions_common_1.LanguageCode.ENGLISH,
-                mangaId: mangaId
+                group: this.getNSTag(mangaData.tags, 'group')[1],
+                langCode: Languages_1.reverseLangCode[(_g = (_f = this.getNSTag(mangaData.tags, 'language')[1]) === null || _f === void 0 ? void 0 : _f.toUpperCase()) !== null && _g !== void 0 ? _g : 'ENGLISH'],
+                mangaId: mangaId,
+                time: this.getDateAdded(mangaData.tags)
             })];
     }
     parseChapterDetails(json, mangaId, chapterId, source) {
@@ -2717,27 +2720,10 @@ class Parser {
         }
         return (results);
     }
-    /*
-        filterUpdatedManga(json: any): string[] {
-            let collectedUpdates: {id: string, parodyTag: string}[] = []
-            let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
-            for (let result of sortedJson) {
-                let parodyTag = this.getNSTag(result.tags, 'parody')[1]?.replace(/\d*$/, '')?.trim()?.toLowerCase()
-                let matchingUpdate = collectedUpdates.filter(updates => updates.parodyTag === parodyTag)
-                if(matchingUpdate.length < 1) {
-                    collectedUpdates.push({id: result.arcid, parodyTag: parodyTag})
-                }
-                else {
-                    collectedUpdates.push(matchingUpdate[0])
-                }
-            }
-            return (collectedUpdates.map(update => update.id))
-
-        }
-    */
     // UTILITY METHODS
     getNSTag(tags, tag) {
-        let NSTag = tags.split(',');
+        var _a;
+        let NSTag = (_a = tags.split(',')) !== null && _a !== void 0 ? _a : '';
         for (let index of NSTag) {
             if (index.includes(':')) {
                 let temp = index.trim().split(":", 2);
@@ -2746,6 +2732,10 @@ class Parser {
             }
         }
         return [];
+    }
+    getDateAdded(tags) {
+        var _a, _b, _c;
+        return new Date(Number((_c = (_b = (_a = this.getNSTag(tags, 'date_added')) === null || _a === void 0 ? void 0 : _a.pop()) === null || _b === void 0 ? void 0 : _b.padEnd(13, '0')) !== null && _c !== void 0 ? _c : Date.now()));
     }
     isLastPage(json) {
         return json.length > 0;
