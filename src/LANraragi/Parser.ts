@@ -3,7 +3,7 @@ import {reverseLangCode} from "./Languages";
 
 export class Parser {
 
-    parseMangaDetails(json: any, mangaId: string, source: any): any {
+    parseMangaDetails(json: any, mangaId: string, baseUrl: any): any {
         const tagSections: TagSection[] = [createTagSection({id: '0', label: 'genres', tags: []})]
         let re = /[: ]([^,:]*),/g, group
         let tags: string[] = []
@@ -18,14 +18,14 @@ export class Parser {
             artist: this.getNSTag(json.tags, 'artist')[1]?.trim(),
             tags: tagSections,
             desc: '',
-            image: `${source.baseUrl}/api/archives/${mangaId}/thumbnail`,
+            image: `${baseUrl}/api/archives/${mangaId}/thumbnail`,
             status: MangaStatus.ONGOING,
             rating: this.getNSTag(json.tags, 'artist')[1]?.split('⭐').length - 1 ?? 0,
             lastUpdate: json.isNew ? new Date(Date.now() - 604800000).toString() : undefined
         })
     }
 
-    parseChapters(json: any, mangaId: string, mangaData: any): Chapter[] {
+    parseChapters(json: any, mangaId: string, mangaData: any, language: string): Chapter[] {
         let chapters: Chapter[] = []
         for (let manga of json) {
             if (manga.tags.includes(this.getNSTag(mangaData.tags, 'parody')[1]?.replace(/\d*$/, '').trim())) {
@@ -34,7 +34,7 @@ export class Parser {
                     chapNum: Number(manga.title?.match(/\d*$/) ?? 1),
                     name: manga.title,
                     group: this.getNSTag(manga.tags, 'group')[1],
-                    langCode: reverseLangCode[this.getNSTag(manga.tags, 'language')[1]?.toUpperCase() ?? 'ENGLISH'],
+                    langCode: reverseLangCode[language],
                     mangaId: mangaId,
                 }))
             }
@@ -49,16 +49,16 @@ export class Parser {
         })]
     }
 
-    parseChapterDetails(json: any, mangaId: string, chapterId: string, source: any): ChapterDetails {
+    parseChapterDetails(json: any, mangaId: string, chapterId: string, language: any): ChapterDetails {
         return createChapterDetails({
             id: chapterId,
             mangaId: mangaId,
-            pages: json.pages.map((x: string) => `${source.baseUrl}${x.replace('.', '')}`),
+            pages: json.pages.map((x: string) => `${language}${x.replace('.', '')}`),
             longStrip: false
         })
     }
 
-    parseArchiveList(json: any, source: any): MangaTile[] {
+    parseArchiveList(json: any, baseUrl: any): MangaTile[] {
         let collectedTags: string[] = []
         let results = []
         let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
@@ -68,31 +68,32 @@ export class Parser {
                 results.push(createMangaTile({
                     id: result.arcid,
                     title: createIconText({text: result.title}),
-                    image: `${source.baseUrl}/api/archives/${result.arcid}/thumbnail`
+                    image: `${baseUrl}/api/archives/${result.arcid}/thumbnail`
                 }))
                 collectedTags.push(mangaTag)
             }
         }
         return (results)
     }
-/*
-    filterUpdatedManga(json: any): string[] {
-        let collectedUpdates: {id: string, parodyTag: string}[] = []
-        let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
-        for (let result of sortedJson) {
-            let parodyTag = this.getNSTag(result.tags, 'parody')[1]?.replace(/\d*$/, '')?.trim()?.toLowerCase()
-            let matchingUpdate = collectedUpdates.filter(updates => updates.parodyTag === parodyTag)
-            if(matchingUpdate.length < 1) {
-                collectedUpdates.push({id: result.arcid, parodyTag: parodyTag})
-            }
-            else {
-                collectedUpdates.push(matchingUpdate[0])
-            }
-        }
-        return (collectedUpdates.map(update => update.id))
 
-    }
-*/
+    /*
+        filterUpdatedManga(json: any): string[] {
+            let collectedUpdates: {id: string, parodyTag: string}[] = []
+            let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
+            for (let result of sortedJson) {
+                let parodyTag = this.getNSTag(result.tags, 'parody')[1]?.replace(/\d*$/, '')?.trim()?.toLowerCase()
+                let matchingUpdate = collectedUpdates.filter(updates => updates.parodyTag === parodyTag)
+                if(matchingUpdate.length < 1) {
+                    collectedUpdates.push({id: result.arcid, parodyTag: parodyTag})
+                }
+                else {
+                    collectedUpdates.push(matchingUpdate[0])
+                }
+            }
+            return (collectedUpdates.map(update => update.id))
+
+        }
+    */
 
     // UTILITY METHODS
 

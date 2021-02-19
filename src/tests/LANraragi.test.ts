@@ -5,19 +5,19 @@ import { APIWrapper } from "paperback-extensions-common";
 
 describe('LANraragi Tests', function () {
 
-
     var wrapper: APIWrapper = new APIWrapper();
     var source: Source = new LANraragi(cheerio);
     var chai = require('chai'), expect = chai.expect, should = chai.should();
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
 
-    /**
-     * The Manga ID which this unit test uses to Madara it's details off of.
-     * Try to choose a manga which is updated frequently, so that the historical checking test can
-     * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
-     */
     var mangaId = "6646c24b0951483ff23709452e130ed2bc85defb";
+
+    before(function() {
+        // This will run before ANY test. Set your state values here
+        source.stateManager.store("serverAddress", "http://192.168.1.97:3000") // Or whatever your endpoint is
+        source.stateManager.store("APIKey", "bruhposmdapso")
+    })
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, mangaId);
