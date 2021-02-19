@@ -75,24 +75,25 @@ export class Parser {
         }
         return (results)
     }
-/*
-    filterUpdatedManga(json: any): string[] {
-        let collectedUpdates: {id: string, parodyTag: string}[] = []
-        let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
-        for (let result of sortedJson) {
-            let parodyTag = this.getNSTag(result.tags, 'parody')[1]?.replace(/\d*$/, '')?.trim()?.toLowerCase()
-            let matchingUpdate = collectedUpdates.filter(updates => updates.parodyTag === parodyTag)
-            if(matchingUpdate.length < 1) {
-                collectedUpdates.push({id: result.arcid, parodyTag: parodyTag})
-            }
-            else {
-                collectedUpdates.push(matchingUpdate[0])
-            }
-        }
-        return (collectedUpdates.map(update => update.id))
 
-    }
-*/
+    /*
+        filterUpdatedManga(json: any): string[] {
+            let collectedUpdates: {id: string, parodyTag: string}[] = []
+            let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
+            for (let result of sortedJson) {
+                let parodyTag = this.getNSTag(result.tags, 'parody')[1]?.replace(/\d*$/, '')?.trim()?.toLowerCase()
+                let matchingUpdate = collectedUpdates.filter(updates => updates.parodyTag === parodyTag)
+                if(matchingUpdate.length < 1) {
+                    collectedUpdates.push({id: result.arcid, parodyTag: parodyTag})
+                }
+                else {
+                    collectedUpdates.push(matchingUpdate[0])
+                }
+            }
+            return (collectedUpdates.map(update => update.id))
+
+        }
+    */
 
     // UTILITY METHODS
 

@@ -2,10 +2,8 @@ import {
     Chapter,
     ChapterDetails,
     HomeSection,
-    LanguageCode,
     Manga,
     MangaTile,
-    MangaUpdates,
     PagedResults,
     RequestHeaders,
     SearchRequest,
@@ -116,6 +114,7 @@ export class LANraragi extends Source {
             results: results
         })
     }
+
     /*
     async filterUpdatedManga(mangaUpdatesFoundCallback: (updates: MangaUpdates) => void, time: Date, ids: string[]): Promise<void> {
             const request = createRequestObject({
@@ -143,6 +142,7 @@ export class LANraragi extends Source {
             }
 
     }*/
+
     /*
     parseTags(json: any): TagSection[] {
         let tagSections: TagSection[] = []
@@ -240,7 +240,7 @@ export class LANraragi extends Source {
         })
     }
 
-    base64Encode = (str: string):string => Buffer.from(str, 'binary').toString('base64')
+    base64Encode = (str: string): string => Buffer.from(str, 'binary').toString('base64')
 
     constructHeaders(headers: any): any {
         if (APIKEY !== '') {
