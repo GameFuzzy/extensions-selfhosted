@@ -257,9 +257,7 @@ export class LANraragi extends Source {
             headers["Authorization"] = `Bearer ${this.base64Encode(APIKEY)}`
         }
         headers["accept"] = "image/avif,image/apng,image/jpeg;q=0.9,image/png;q=0.9,image/*;q=0.8"
-        return {
-            headers
-        }
+        return headers
     }
 
 }
