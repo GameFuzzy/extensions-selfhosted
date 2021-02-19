@@ -2732,7 +2732,7 @@ class Parser {
                 }
             }
             return (collectedUpdates.map(update => update.id))
-    
+
         }
     */
     // UTILITY METHODS
