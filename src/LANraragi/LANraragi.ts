@@ -10,17 +10,15 @@ import {
     SearchRequest,
     Source,
     SourceInfo,
+    SourceMenu,
+    SourceMenuItemType,
     TagType,
     UserForm
 } from "paperback-extensions-common"
 
 import {Parser} from './Parser'
 
-const LANRARAGI_DOMAIN = 'http://192.168.1.97:3000'
-
-const APIKEY = ''
-
-const LANGUAGE = 'English'
+const LANRARAGI_DOMAIN = 'http://192.168.1.1:3000'
 
 export const LANraragiInfo: SourceInfo = {
     version: '1.0.0',
@@ -43,12 +41,78 @@ export class LANraragi extends Source {
 
     parser = new Parser()
 
+    async getSourceMenu(): Promise<SourceMenu> {
+        return Promise.resolve(createSourceMenu({
+            items: [
+                createSourceMenuItem({
+                    id: "serverSettings",
+                    label: "Server Settings",
+                    type: SourceMenuItemType.FORM
+                })
+            ]
+        }))
+    }
+
+    async getSourceMenuItemForm(itemId: string): Promise<UserForm> {
+        let objects: FormObject[] = [
+            createTextFieldObject({
+                id: 'serverAddress',
+                label: 'Server URL',
+                placeholderText: 'http://192.168.1.1:3000',
+                value: (await this.stateManager.retrieve('serverAddress')).value
+            }),
+            createTextFieldObject({
+                id: 'APIKey',
+                label: 'API Key',
+                placeholderText: 'AnimeLover420',
+                value: (await this.stateManager.retrieve('APIKey')).value
+            }),
+            createTextFieldObject({
+                id: 'language',
+                label: 'Language',
+                placeholderText: 'English',
+                value: (await this.stateManager.retrieve('language')).value
+            })
+        ]
+        return createUserForm({formElements: objects})
+    }
+
+    async submitSourceMenuItemForm(itemId: string, form: any) {
+        var promises: Promise<void>[] = []
+
+        Object.keys(form).forEach(key => {
+            promises.push(this.stateManager.store(key, {value: form[key]}))
+        })
+
+        await Promise.all(promises)
+    }
+
+    base64Encode = (str: string): string => Buffer.from(str, 'binary').toString('base64')
+
+    async getAPI(): Promise<{ key: string, isEmpty: boolean }> {
+        return {
+            key: `Bearer ${this.base64Encode((await this.stateManager.retrieve('APIKey')).value)}`,
+            isEmpty: (await this.stateManager.retrieve('APIKey')).value != ''
+        }
+    }
+
+    async getServerAddress(): Promise<string> {
+        let address = (await this.stateManager.retrieve('APIKey')).value.replace(/\/$/, '')
+        // Clean up the address
+        return (!address.startsWith("http://") && !address.startsWith("https://")) ? `http://${address.replace('https://', '')}` : address
+    }
+
+    async getLanguage(): Promise<string> {
+        return (await this.stateManager.retrieve('language')).value ?? "_unknown"
+    }
+
+
     getMangaShareUrl(mangaId: string) {
         return `${LANRARAGI_DOMAIN}/reader?id=${mangaId}`
     }
 
     async getMangaDetails(mangaId: string): Promise<Manga> {
-        const baseUrl = await this.stateManager.retrieve('serverAddress') ?? LANRARAGI_DOMAIN
+        const baseUrl = await this.getServerAddress()
         const request = createRequestObject({
             url: `${baseUrl}/api/archives/${mangaId}/metadata`,
             method: 'GET',
@@ -62,7 +126,7 @@ export class LANraragi extends Source {
     }
 
     async getChapters(mangaId: string): Promise<Chapter[]> {
-        const baseUrl = await this.stateManager.retrieve('serverAddress') ?? LANRARAGI_DOMAIN
+        const baseUrl = await this.getServerAddress()
         const tagRequest = createRequestObject({
             url: `${baseUrl}/api/archives/${mangaId}/metadata`,
             method: 'GET',
@@ -79,11 +143,11 @@ export class LANraragi extends Source {
         const mangaData = typeof tagResponse.data === "string" ? JSON.parse(tagResponse.data) : tagResponse.data
         const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
 
-        return this.parser.parseChapters(json, mangaId, mangaData, await this.stateManager.retrieve('language')?.toUpperCase() ?? '_unknown')
+        return this.parser.parseChapters(json, mangaId, mangaData, await this.getLanguage())
     }
 
     async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
-        const baseUrl = await this.stateManager.retrieve('serverAddress') ?? LANRARAGI_DOMAIN
+        const baseUrl = await this.getServerAddress()
         const request = createRequestObject({
             url: `${baseUrl}/api/archives/${chapterId}/extract`,
             method: 'POST',
@@ -99,11 +163,11 @@ export class LANraragi extends Source {
         const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
         await this.requestManager.schedule(deleteNewRequest, 1)
 
-        return this.parser.parseChapterDetails(json, mangaId, chapterId, await this.stateManager.retrieve('language')?.toUpperCase() ?? '_unknown')
+        return this.parser.parseChapterDetails(json, mangaId, chapterId, await (await this.getLanguage()).toUpperCase() ?? '_unknown')
     }
 
     async searchRequest(query: SearchRequest, metadata: any): Promise<PagedResults> {
-        const baseUrl = await this.stateManager.retrieve('serverAddress') ?? LANRARAGI_DOMAIN
+        const baseUrl = await this.getServerAddress()
         const request = createRequestObject({
             url: `${baseUrl}/api/search`,
             method: 'GET',
@@ -118,34 +182,6 @@ export class LANraragi extends Source {
             results: results
         })
     }
-
-    /*
-    async filterUpdatedManga(mangaUpdatesFoundCallback: (updates: MangaUpdates) => void, time: Date, ids: string[]): Promise<void> {
-            const request = createRequestObject({
-                url: `${await this.stateManager.retrieve('serverAddress')}/api/search?newonly=true`,
-                method: 'GET',
-                headers: this.constructHeaders({})
-            })
-
-            const response = await this.requestManager.schedule(request, 1)
-            const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
-
-            const clearNewRequest = createRequestObject({
-            url: `${await this.stateManager.retrieve('serverAddress')}/api/database/isnew`,
-            method: 'POST',
-            headers: this.constructHeaders({})
-            })
-
-            await this.requestManager.schedule(request, 1)
-
-            let updatedManga = this.parser.parseArchiveList(json.data, this).map(manga => manga.id)
-            if (updatedManga.length > 0) {
-                mangaUpdatesFoundCallback(createMangaUpdates({
-                    ids: updatedManga
-                }))
-            }
-
-    }*/
 
     /*
     parseTags(json: any): TagSection[] {
@@ -163,7 +199,7 @@ export class LANraragi extends Source {
      * @param sectionCallback
      */
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
-        const baseUrl = await this.stateManager.retrieve('serverAddress') ?? LANRARAGI_DOMAIN
+        const baseUrl = await this.getServerAddress()
         const sections = [
             {
                 request: createRequestObject({
@@ -212,7 +248,7 @@ export class LANraragi extends Source {
     }
 
     async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults | null> {
-        const baseUrl = await this.stateManager.retrieve('serverAddress') ?? LANRARAGI_DOMAIN
+        const baseUrl = await this.getServerAddress()
         let page = metadata?.page ?? 1   // Default to page 1
         let sortBy = ''
         switch (homepageSectionId) {
@@ -246,11 +282,9 @@ export class LANraragi extends Source {
         })
     }
 
-    base64Encode = (str: string): string => Buffer.from(str, 'binary').toString('base64')
-
     async constructHeaders(headers: any): Promise<any> {
-        if (APIKEY !== '') {
-            headers["Authorization"] = `Bearer ${this.base64Encode(await this.stateManager.retrieve('APIKey') ?? '')}`
+        if ((await this.getAPI()).isEmpty) {
+            headers["Authorization"] = this.getAPI()
         }
         headers["accept"] = 'application/json'
         return headers
@@ -259,31 +293,11 @@ export class LANraragi extends Source {
 
     async globalRequestHeaders(): Promise<RequestHeaders> {
         let headers: any = {}
-        if (APIKEY !== '') {
-            headers["Authorization"] = `Bearer ${this.base64Encode(await this.stateManager.retrieve('APIKey') ?? '')}`
+        if ((await this.getAPI()).isEmpty) {
+            headers["Authorization"] = this.getAPI()
         }
         headers["accept"] = "image/avif,image/apng,image/jpeg;q=0.9,image/png;q=0.9,image/*;q=0.8"
         return headers
-    }
-
-    async getAppStatefulForm(): Promise<UserForm> {
-        let objects: FormObject[] = []
-
-        objects.push(createTextFieldObject({
-            id: 'serverAddress',
-            userReadableTitle: 'Server URL',
-            placeholderText: 'http://127.0.0.1:3000',
-            userResponse: await this.stateManager.retrieve('serverAddress')
-        }))
-
-        objects.push(createTextFieldObject({
-            id: 'APIKey',
-            userReadableTitle: 'Username',
-            placeholderText: 'API Key',
-            userResponse: await this.stateManager.retrieve('APIKey')
-        }))
-
-        return createUserForm({formElements: objects})
     }
 
 }
