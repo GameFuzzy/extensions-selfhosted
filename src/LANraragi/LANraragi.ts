@@ -59,19 +59,19 @@ export class LANraragi extends Source {
                 id: 'serverAddress',
                 label: 'Server URL',
                 placeholderText: 'http://192.168.1.1:3000',
-                value: (await this.stateManager.retrieve('serverAddress')).value
+                value: (await this.stateManager.retrieve('serverAddress'))
             }),
             createTextFieldObject({
                 id: 'APIKey',
                 label: 'API Key',
                 placeholderText: 'AnimeLover420',
-                value: (await this.stateManager.retrieve('APIKey')).value
+                value: (await this.stateManager.retrieve('APIKey'))
             }),
             createTextFieldObject({
                 id: 'language',
                 label: 'Language',
                 placeholderText: 'English',
-                value: (await this.stateManager.retrieve('language')).value
+                value: (await this.stateManager.retrieve('language'))
             })
         ]
         return createUserForm({formElements: objects})
@@ -81,7 +81,7 @@ export class LANraragi extends Source {
         var promises: Promise<void>[] = []
 
         Object.keys(form).forEach(key => {
-            promises.push(this.stateManager.store(key, {value: form[key]}))
+            promises.push(this.stateManager.store(key, form[key]))
         })
 
         await Promise.all(promises)
@@ -91,19 +91,19 @@ export class LANraragi extends Source {
 
     async getAPI(): Promise<{ key: string, isEmpty: boolean }> {
         return {
-            key: `Bearer ${this.base64Encode((await this.stateManager.retrieve('APIKey')).value)}`,
-            isEmpty: (await this.stateManager.retrieve('APIKey')).value != ''
+            key: `Bearer ${this.base64Encode(await this.stateManager.retrieve('APIKey'))}`,
+            isEmpty: ((await this.stateManager.retrieve('APIKey')) ?? '') == ''
         }
     }
 
     async getServerAddress(): Promise<string> {
-        let address = (await this.stateManager.retrieve('APIKey')).value.replace(/\/$/, '')
+        let address = (await this.stateManager.retrieve('APIKey'))?.replace(/\/$/, '')
         // Clean up the address
-        return (!address.startsWith("http://") && !address.startsWith("https://")) ? `http://${address.replace('https://', '')}` : address
+        return (!address?.startsWith("http://") && !address?.startsWith("https://")) ? `http://${address?.replace('https://', '')}` : address
     }
 
     async getLanguage(): Promise<string> {
-        return (await this.stateManager.retrieve('language')).value ?? "_unknown"
+        return (await this.stateManager.retrieve('language')) ?? "_unknown"
     }
 
 
@@ -283,7 +283,7 @@ export class LANraragi extends Source {
     }
 
     async constructHeaders(headers: any): Promise<any> {
-        if ((await this.getAPI()).isEmpty) {
+        if (!(await this.getAPI()).isEmpty) {
             headers["Authorization"] = this.getAPI()
         }
         headers["accept"] = 'application/json'
@@ -293,7 +293,7 @@ export class LANraragi extends Source {
 
     async globalRequestHeaders(): Promise<RequestHeaders> {
         let headers: any = {}
-        if ((await this.getAPI()).isEmpty) {
+        if (!(await this.getAPI()).isEmpty) {
             headers["Authorization"] = this.getAPI()
         }
         headers["accept"] = "image/avif,image/apng,image/jpeg;q=0.9,image/png;q=0.9,image/*;q=0.8"
