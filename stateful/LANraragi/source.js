@@ -2665,21 +2665,24 @@ class LANraragi extends paperback_extensions_common_1.Source {
     forceTags(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
             const baseUrl = yield this.getServerAddress();
+            const APIKey = yield this.getAPI();
             let promises = [];
             const plugins = ['DateAddedPlugin', 'ezeplugin', 'koromoplugin'];
             let tags = [];
-            for (let plugin of plugins) {
-                const request = createRequestObject({
-                    url: `${baseUrl}/api/plugins/use`,
-                    method: 'POST',
-                    headers: yield this.constructHeaders({}),
-                    param: `?key=${(yield this.getAPI()).key}&plugin=${plugin}&id=${mangaId}`
-                });
-                promises.push(this.requestManager.schedule(request, 1).then(response => {
-                    var _a, _b;
-                    let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-                    tags.push((_b = (_a = json.data) === null || _a === void 0 ? void 0 : _a.new_tags) === null || _b === void 0 ? void 0 : _b.trim());
-                }));
+            if (!APIKey.isEmpty) {
+                for (let plugin of plugins) {
+                    const request = createRequestObject({
+                        url: `${baseUrl}/api/plugins/use`,
+                        method: 'POST',
+                        headers: yield this.constructHeaders({}),
+                        param: `?key=${APIKey.key}&plugin=${plugin}&id=${mangaId}`
+                    });
+                    promises.push(this.requestManager.schedule(request, 1).then(response => {
+                        var _a, _b;
+                        let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+                        tags.push((_b = (_a = json.data) === null || _a === void 0 ? void 0 : _a.new_tags) === null || _b === void 0 ? void 0 : _b.trim());
+                    }));
+                }
             }
             const tagRequest = createRequestObject({
                 url: `${baseUrl}/api/archives/${mangaId}/metadata`,
