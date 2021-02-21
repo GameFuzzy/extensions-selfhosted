@@ -2378,7 +2378,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LANraragi = exports.LANraragiInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Parser_1 = require("./Parser");
-const LANRARAGI_DOMAIN = 'http://192.168.1.1:3000';
+const LANRARAGI_DOMAIN = 'https://github.com/Difegue/LANraragi';
 exports.LANraragiInfo = {
     version: '1.0.0',
     name: 'LANraragi',
@@ -2400,81 +2400,17 @@ class LANraragi extends paperback_extensions_common_1.Source {
         super(...arguments);
         this.parser = new Parser_1.Parser();
         this.base64Encode = (str) => Buffer.from(str, 'binary').toString('base64');
-    }
-    getSourceMenu() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return Promise.resolve(createSourceMenu({
-                items: [
-                    createSourceMenuItem({
-                        id: "serverSettings",
-                        label: "Server Settings",
-                        type: paperback_extensions_common_1.SourceMenuItemType.FORM
-                    })
-                ]
-            }));
-        });
-    }
-    getSourceMenuItemForm(itemId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let objects = [
-                createTextFieldObject({
-                    id: 'serverAddress',
-                    label: 'Server URL',
-                    placeholderText: 'http://192.168.1.1:3000',
-                    value: (yield this.stateManager.retrieve('serverAddress')).value
-                }),
-                createTextFieldObject({
-                    id: 'APIKey',
-                    label: 'API Key',
-                    placeholderText: 'AnimeLover420',
-                    value: (yield this.stateManager.retrieve('APIKey')).value
-                }),
-                createTextFieldObject({
-                    id: 'language',
-                    label: 'Language',
-                    placeholderText: 'English',
-                    value: (yield this.stateManager.retrieve('language')).value
-                })
-            ];
-            return createUserForm({ formElements: objects });
-        });
-    }
-    submitSourceMenuItemForm(itemId, form) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var promises = [];
-            Object.keys(form).forEach(key => {
-                promises.push(this.stateManager.store(key, { value: form[key] }));
-            });
-            yield Promise.all(promises);
-        });
-    }
-    getAPI() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return {
-                key: `Bearer ${this.base64Encode((yield this.stateManager.retrieve('APIKey')).value)}`,
-                isEmpty: (yield this.stateManager.retrieve('APIKey')).value != ''
-            };
-        });
-    }
-    getServerAddress() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let address = (yield this.stateManager.retrieve('APIKey')).value.replace(/\/$/, '');
-            // Clean up the address
-            return (!address.startsWith("http://") && !address.startsWith("https://")) ? `http://${address.replace('https://', '')}` : address;
-        });
-    }
-    getLanguage() {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            return (_a = (yield this.stateManager.retrieve('language')).value) !== null && _a !== void 0 ? _a : "_unknown";
-        });
+        this.getAPI = () => __awaiter(this, void 0, void 0, function* () { return this.constructAPI(yield this.stateManager.retrieve('APIKey')); });
+        this.getServerAddress = () => __awaiter(this, void 0, void 0, function* () { return this.constructServerAddress(yield this.stateManager.retrieve('serverAddress')); });
+        this.getLanguage = () => __awaiter(this, void 0, void 0, function* () { return this.constructLanguage(yield this.stateManager.retrieve('language')); });
     }
     getMangaShareUrl(mangaId) {
-        return `${LANRARAGI_DOMAIN}/reader?id=${mangaId}`;
+        return `${LANRARAGI_DOMAIN}`;
     }
     getMangaDetails(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
             const baseUrl = yield this.getServerAddress();
+            const tags = yield this.forceTags(mangaId);
             const request = createRequestObject({
                 url: `${baseUrl}/api/archives/${mangaId}/metadata`,
                 method: 'GET',
@@ -2482,47 +2418,57 @@ class LANraragi extends paperback_extensions_common_1.Source {
             });
             const response = yield this.requestManager.schedule(request, 1);
             const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-            return this.parser.parseMangaDetails(json, mangaId, baseUrl);
+            return this.parser.parseMangaDetails(json, mangaId, tags, baseUrl);
         });
     }
     getChapters(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
             const baseUrl = yield this.getServerAddress();
-            const tagRequest = createRequestObject({
-                url: `${baseUrl}/api/archives/${mangaId}/metadata`,
-                method: 'GET',
-                headers: yield this.constructHeaders({})
-            });
+            const tags = yield this.forceTags(mangaId);
             const request = createRequestObject({
                 url: `${baseUrl}/api/archives`,
                 method: 'GET',
                 headers: yield this.constructHeaders({})
             });
-            const tagResponse = yield this.requestManager.schedule(tagRequest, 1);
             const response = yield this.requestManager.schedule(request, 1);
-            const mangaData = typeof tagResponse.data === "string" ? JSON.parse(tagResponse.data) : tagResponse.data;
             const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-            return this.parser.parseChapters(json, mangaId, mangaData, yield this.getLanguage());
+            return this.parser.parseChapters(json, mangaId, tags, yield this.getLanguage());
         });
     }
     getChapterDetails(mangaId, chapterId) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
+            let promises = [];
+            let json = '';
             const baseUrl = yield this.getServerAddress();
-            const request = createRequestObject({
-                url: `${baseUrl}/api/archives/${chapterId}/extract`,
-                method: 'POST',
-                headers: yield this.constructHeaders({})
-            });
-            const deleteNewRequest = createRequestObject({
-                url: `${baseUrl}/api/archives/${chapterId}/isnew`,
-                method: 'DELETE',
-                headers: yield this.constructHeaders({})
-            });
-            const response = yield this.requestManager.schedule(request, 1);
-            const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-            yield this.requestManager.schedule(deleteNewRequest, 1);
-            return this.parser.parseChapterDetails(json, mangaId, chapterId, (_a = yield (yield this.getLanguage()).toUpperCase()) !== null && _a !== void 0 ? _a : '_unknown');
+            const requests = [
+                // Get all the pages
+                {
+                    id: 0,
+                    request: createRequestObject({
+                        url: `${baseUrl}/api/archives/${chapterId}/extract`,
+                        method: 'POST',
+                        headers: yield this.constructHeaders({})
+                    })
+                },
+                // Delete "NEW" flag
+                {
+                    id: 1,
+                    request: createRequestObject({
+                        url: `${baseUrl}/api/archives/${chapterId}/isnew`,
+                        method: 'DELETE',
+                        headers: yield this.constructHeaders({})
+                    })
+                },
+            ];
+            for (const requestObject of requests) {
+                promises.push(this.requestManager.schedule(requestObject.request, 1).then(response => {
+                    if (requestObject.id === 0) {
+                        json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+                    }
+                }));
+            }
+            yield Promise.all(promises);
+            return this.parser.parseChapterDetails(json, mangaId, chapterId, yield this.getServerAddress());
         });
     }
     searchRequest(query, metadata) {
@@ -2543,20 +2489,6 @@ class LANraragi extends paperback_extensions_common_1.Source {
             });
         });
     }
-    /*
-    parseTags(json: any): TagSection[] {
-        let tagSections: TagSection[] = []
-        for (let category of json) {
-            tagSections = [...tagSections, createTagSection({id: category.namespace, label: category.namespace.replace(/^\w/, (c: string) => c.toUpperCase()), tags: []})]
-
-        }
-    }*/
-    /**
-     * It's hard to capture a default logic for homepages. So for Madara sources,
-     * instead we've provided a homesection reader for the base_url/source_traversal_path/ endpoint.
-     * This supports having paged views in almost all cases.
-     * @param sectionCallback
-     */
     getHomePageSections(sectionCallback) {
         return __awaiter(this, void 0, void 0, function* () {
             const baseUrl = yield this.getServerAddress();
@@ -2586,7 +2518,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                     })
                 }
             ];
-            const promises = [];
+            let promises = [];
             for (const section of sections) {
                 // Let the app load empty sections
                 sectionCallback(section.section);
@@ -2637,22 +2569,147 @@ class LANraragi extends paperback_extensions_common_1.Source {
             });
         });
     }
-    constructHeaders(headers) {
+    getSourceMenu() {
         return __awaiter(this, void 0, void 0, function* () {
-            if ((yield this.getAPI()).isEmpty) {
-                headers["Authorization"] = this.getAPI();
+            return Promise.resolve(createSourceMenu({
+                items: [
+                    createSourceMenuItem({
+                        id: "serverSettings",
+                        label: "Server Settings",
+                        type: paperback_extensions_common_1.SourceMenuItemType.FORM
+                    })
+                ]
+            }));
+        });
+    }
+    getSourceMenuItemForm(itemId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let objects = [
+                createTextFieldObject({
+                    id: 'serverAddress',
+                    label: 'Server URL',
+                    placeholderText: 'http://192.168.1.1:3000',
+                    value: (yield this.stateManager.retrieve('serverAddress'))
+                }),
+                createTextFieldObject({
+                    id: 'APIKey',
+                    label: 'API Key',
+                    placeholderText: 'AnimeLover420',
+                    value: (yield this.stateManager.retrieve('APIKey'))
+                }),
+                createTextFieldObject({
+                    id: 'language',
+                    label: 'Language',
+                    placeholderText: 'English',
+                    value: (yield this.stateManager.retrieve('language'))
+                })
+            ];
+            return createUserForm({ formElements: objects });
+        });
+    }
+    submitSourceMenuItemForm(itemId, form) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let promises = [];
+            let address = this.constructServerAddress(form['serverAddress']);
+            let APIKey = this.constructAPI(form['APIKey']);
+            let headers = {};
+            // Set authorization header
+            if (!APIKey.isEmpty)
+                headers['authorization'] = APIKey.key;
+            let responseStatus;
+            let json;
+            const request = createRequestObject({
+                url: `${address}/api/info`,
+                method: 'GET',
+                headers: headers
+            });
+            try {
+                const response = yield this.requestManager.schedule(request, 1);
+                responseStatus = response.status;
+                json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
             }
-            headers["accept"] = 'application/json';
-            return headers;
+            catch (error) { }
+            switch (responseStatus) {
+                case 200: {
+                    if (json.nofun_mode)
+                        break;
+                }
+                case 401: {
+                    throw new Error(`Invalid API key: ${APIKey.key}`);
+                }
+                default: {
+                    throw new Error(`Invalid URL: ${address}`);
+                }
+            }
+            Object.keys(form).forEach(key => {
+                promises.push(this.stateManager.store(key, form[key]));
+            });
+            yield Promise.all(promises);
+        });
+    }
+    constructAPI(APIKey) {
+        return {
+            key: `Bearer ${this.base64Encode(APIKey)}`,
+            isEmpty: (APIKey !== null && APIKey !== void 0 ? APIKey : '') == ''
+        };
+    }
+    constructServerAddress(serverAddress) {
+        var _a;
+        let address = (_a = (serverAddress)) === null || _a === void 0 ? void 0 : _a.replace(/\/$/, '');
+        // Clean up the address
+        return (!(address === null || address === void 0 ? void 0 : address.startsWith("http://")) && !(address === null || address === void 0 ? void 0 : address.startsWith("https://"))) ? `http://${address === null || address === void 0 ? void 0 : address.replace('https://', '')}` : address;
+    }
+    constructLanguage(language) {
+        return language === null || language === void 0 ? void 0 : language.toUpperCase();
+    }
+    forceTags(mangaId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const baseUrl = yield this.getServerAddress();
+            let promises = [];
+            const plugins = ['DateAddedPlugin', 'ezeplugin', 'koromoplugin'];
+            let tags = [];
+            for (let plugin of plugins) {
+                const request = createRequestObject({
+                    url: `${baseUrl}/api/plugins/use`,
+                    method: 'POST',
+                    headers: yield this.constructHeaders({}),
+                    param: `?key=${(yield this.getAPI()).key}&plugin=${plugin}&id=${mangaId}`
+                });
+                promises.push(this.requestManager.schedule(request, 1).then(response => {
+                    var _a, _b;
+                    let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+                    tags.push((_b = (_a = json.data) === null || _a === void 0 ? void 0 : _a.new_tags) === null || _b === void 0 ? void 0 : _b.trim());
+                }));
+            }
+            const tagRequest = createRequestObject({
+                url: `${baseUrl}/api/archives/${mangaId}/metadata`,
+                method: 'GET',
+                headers: yield this.constructHeaders({})
+            });
+            promises.push(this.requestManager.schedule(tagRequest, 1).then(response => {
+                let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+                tags.push(json === null || json === void 0 ? void 0 : json.tags);
+            }));
+            yield Promise.all(promises);
+            return tags;
         });
     }
     globalRequestHeaders() {
         return __awaiter(this, void 0, void 0, function* () {
             let headers = {};
-            if ((yield this.getAPI()).isEmpty) {
-                headers["Authorization"] = this.getAPI();
+            if (!(yield this.getAPI()).isEmpty) {
+                headers["authorization"] = (yield this.getAPI()).key;
             }
             headers["accept"] = "image/avif,image/apng,image/jpeg;q=0.9,image/png;q=0.9,image/*;q=0.8";
+            return headers;
+        });
+    }
+    constructHeaders(headers) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!(yield this.getAPI()).isEmpty) {
+                headers["authorization"] = (yield this.getAPI()).key;
+            }
+            headers["accept"] = 'application/json';
             return headers;
         });
     }
@@ -2714,39 +2771,39 @@ exports.Parser = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Languages_1 = require("./Languages");
 class Parser {
-    parseMangaDetails(json, mangaId, baseUrl) {
-        var _a, _b, _c, _d;
+    parseMangaDetails(json, mangaId, tags, baseUrl) {
+        var _a, _b;
         const tagSections = [createTagSection({ id: '0', label: 'genres', tags: [] })];
         let re = /[: ]([^,:]*),/g, group;
-        let tags = [];
-        while ((group = re.exec(json.tags + ',')) !== null) {
-            tags.push(group[1]);
+        let tagArray = [];
+        while ((group = re.exec(tags + ',')) !== null) {
+            tagArray.push(group[1]);
         }
-        tagSections[0].tags = tags.map((elem) => createTag({ id: elem, label: elem }));
+        tagSections[0].tags = tagArray.map((elem) => createTag({ id: elem, label: elem }));
         return createManga({
             id: mangaId,
             titles: [json.title],
-            author: (_a = this.getNSTag(json.tags, 'author')[1]) === null || _a === void 0 ? void 0 : _a.trim(),
-            artist: (_b = this.getNSTag(json.tags, 'artist')[1]) === null || _b === void 0 ? void 0 : _b.trim(),
+            author: this.getNSTag(tags, 'author')[1],
+            artist: this.getNSTag(tags, 'artist')[1],
             tags: tagSections,
             desc: '',
             image: `${baseUrl}/api/archives/${mangaId}/thumbnail`,
             status: paperback_extensions_common_1.MangaStatus.ONGOING,
-            rating: (_d = ((_c = this.getNSTag(json.tags, 'artist')[1]) === null || _c === void 0 ? void 0 : _c.split('⭐').length) - 1) !== null && _d !== void 0 ? _d : 0,
+            rating: (_b = ((_a = this.getNSTag(tags, 'artist')[1]) === null || _a === void 0 ? void 0 : _a.split('⭐').length) - 1) !== null && _b !== void 0 ? _b : 0,
             lastUpdate: json.isNew ? new Date(Date.now() - 604800000).toString() : undefined
         });
     }
-    parseChapters(json, mangaId, mangaData, language) {
-        var _a, _b, _c;
+    parseChapters(json, mangaId, tags, language) {
+        var _a, _b, _c, _d;
         let chapters = [];
         for (let manga of json) {
-            if (manga.tags.includes((_a = this.getNSTag(mangaData.tags, 'parody')[1]) === null || _a === void 0 ? void 0 : _a.replace(/\d*$/, '').trim())) {
+            if (manga.tags.includes((_a = this.getNSTag(tags, 'parody')[1]) === null || _a === void 0 ? void 0 : _a.replace(/\d*$/, '').trim())) {
                 chapters.push(createChapter({
                     id: manga.arcid,
                     chapNum: Number((_c = (_b = manga.title) === null || _b === void 0 ? void 0 : _b.match(/\d*$/)) !== null && _c !== void 0 ? _c : 1),
                     name: manga.title,
-                    group: this.getNSTag(manga.tags, 'group')[1],
-                    langCode: Languages_1.reverseLangCode[language],
+                    group: this.getNSTag(tags, 'group')[1],
+                    langCode: Languages_1.reverseLangCode[(_d = this.getNSTag(tags, 'language')[1]) !== null && _d !== void 0 ? _d : language],
                     mangaId: mangaId,
                 }));
             }
@@ -2759,11 +2816,12 @@ class Parser {
                 mangaId: mangaId
             })];
     }
-    parseChapterDetails(json, mangaId, chapterId, language) {
+    parseChapterDetails(json, mangaId, chapterId, address) {
+        var _a;
         return createChapterDetails({
             id: chapterId,
             mangaId: mangaId,
-            pages: json.pages.map((x) => `${language}${x.replace('.', '')}`),
+            pages: (_a = json.pages) === null || _a === void 0 ? void 0 : _a.map((x) => `${address}${x.replace('.', '')}`),
             longStrip: false
         });
     }
@@ -2773,7 +2831,7 @@ class Parser {
         let results = [];
         let sortedJson = json.sort((a, b) => { var _a, _b, _c, _d; return (Number((_b = (_a = a.title) === null || _a === void 0 ? void 0 : _a.match(/\d*$/)) !== null && _b !== void 0 ? _b : 0) - Number((_d = (_c = b.title) === null || _c === void 0 ? void 0 : _c.match(/\d*$/)) !== null && _d !== void 0 ? _d : 0)); });
         for (let result of sortedJson) {
-            let mangaTag = (_a = this.getNSTag(result.tags, 'parody')[1]) === null || _a === void 0 ? void 0 : _a.replace(/\d*$/, '').trim();
+            let mangaTag = (_a = this.getNSTag([result.tags], 'parody')[1]) === null || _a === void 0 ? void 0 : _a.replace(/\d*$/, '').trim();
             if (!collectedTags.includes(mangaTag !== null && mangaTag !== void 0 ? mangaTag : null)) {
                 results.push(createMangaTile({
                     id: result.arcid,
@@ -2785,35 +2843,21 @@ class Parser {
         }
         return (results);
     }
-    /*
-        filterUpdatedManga(json: any): string[] {
-            let collectedUpdates: {id: string, parodyTag: string}[] = []
-            let sortedJson = json.sort((a: any, b: any) => (Number(a.title?.match(/\d*$/) ?? 0) - Number(b.title?.match(/\d*$/) ?? 0)))
-            for (let result of sortedJson) {
-                let parodyTag = this.getNSTag(result.tags, 'parody')[1]?.replace(/\d*$/, '')?.trim()?.toLowerCase()
-                let matchingUpdate = collectedUpdates.filter(updates => updates.parodyTag === parodyTag)
-                if(matchingUpdate.length < 1) {
-                    collectedUpdates.push({id: result.arcid, parodyTag: parodyTag})
-                }
-                else {
-                    collectedUpdates.push(matchingUpdate[0])
-                }
-            }
-            return (collectedUpdates.map(update => update.id))
-
-        }
-    */
     // UTILITY METHODS
     getNSTag(tags, tag) {
-        let NSTag = tags.split(',');
-        for (let index of NSTag) {
-            if (index.includes(':')) {
-                let temp = index.trim().split(":", 2);
-                if (temp[0] == tag && temp.length > 1)
-                    return temp;
+        var _a;
+        let NSTags = [];
+        for (let tagString of tags) {
+            let NSTag = (_a = tagString === null || tagString === void 0 ? void 0 : tagString.split(',')) !== null && _a !== void 0 ? _a : [];
+            for (let index of NSTag) {
+                if (index.includes(':')) {
+                    let temp = index.trim().split(":", 2).map(c => c === null || c === void 0 ? void 0 : c.trim());
+                    if (temp[0] == tag && temp.length > 1)
+                        NSTags = NSTags.concat(temp);
+                }
             }
         }
-        return [];
+        return NSTags;
     }
     isLastPage(json) {
         return json.length > 0;
