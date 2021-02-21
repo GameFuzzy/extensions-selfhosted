@@ -311,20 +311,23 @@ export class LANraragi extends Source {
 
     async forceTags(mangaId: string): Promise<string[]> {
         const baseUrl = await this.getServerAddress()
+        const APIKey = await this.getAPI()
         let promises: Promise<void>[] = []
         const plugins = ['DateAddedPlugin', 'ezeplugin', 'koromoplugin']
         let tags: string[] = []
+        if(!APIKey.isEmpty) {
         for (let plugin of plugins) {
             const request = createRequestObject({
                 url: `${baseUrl}/api/plugins/use`,
                 method: 'POST',
                 headers: await this.constructHeaders({}),
-                param: `?key=${(await this.getAPI()).key}&plugin=${plugin}&id=${mangaId}`
+                param: `?key=${APIKey.key}&plugin=${plugin}&id=${mangaId}`
             })
             promises.push(this.requestManager.schedule(request, 1).then(response => {
                 let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
                 tags.push(json.data?.new_tags?.trim())
             }))
+        }
         }
         const tagRequest = createRequestObject({
             url: `${baseUrl}/api/archives/${mangaId}/metadata`,
