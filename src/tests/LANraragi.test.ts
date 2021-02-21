@@ -1,7 +1,6 @@
 import cheerio from 'cheerio'
-import { Source } from 'paperback-extensions-common'
-import { LANraragi } from '../LANraragi/LANraragi'
-import { APIWrapper } from "paperback-extensions-common";
+import {APIWrapper, Source} from 'paperback-extensions-common'
+import {LANraragi} from '../LANraragi/LANraragi'
 
 describe('LANraragi Tests', function () {
 
@@ -11,12 +10,13 @@ describe('LANraragi Tests', function () {
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
 
-    var mangaId = "6646c24b0951483ff23709452e130ed2bc85defb";
+    var mangaId = "28697b96f0ac5858be2614ed10ca47742c9522fd";
 
-    before(function() {
+    before(async function () {
         // This will run before ANY test. Set your state values here
-        source.stateManager.store("serverAddress", "http://192.168.1.97:3000") // Or whatever your endpoint is
-        source.stateManager.store("APIKey", "bruhposmdapso")
+        await source.stateManager.store("serverAddress", "192.168.1.97:3000") // Or whatever your endpoint is
+        await source.stateManager.store("APIKey", "bruh12345")
+        await source.stateManager.store("language", "English")
     })
 
     it("Retrieve Manga Details", async () => {
@@ -69,13 +69,13 @@ describe('LANraragi Tests', function () {
         expect(result.subtitleText, "No subtitle text").to.be.not.null;
     });
 
-    it("Testing Home-Page aquisition", async() => {
+    it("Testing Home-Page aquisition", async () => {
         let homePages = await wrapper.getHomePageSections(source)
         expect(homePages, "No response from server").to.exist
     })
 
 
-    it("Testing home page results for latest titles", async() => {
+    it("Testing home page results for latest titles", async () => {
         let results = await wrapper.getViewMoreItems(source, "0", {}, 3)
 
         expect(results, "No results whatsoever for this section").to.exist
