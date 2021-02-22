@@ -4,13 +4,9 @@ import {reverseLangCode} from "./Languages";
 export class Parser {
 
     parseMangaDetails(json: any, mangaId: string, tags: string[], baseUrl: any): any {
+        let tagArray = this.getNSTag(tags, undefined, true)
         const tagSections: TagSection[] = [createTagSection({id: '0', label: 'genres', tags: []})]
-        let re = /[: ]([^,:]*),/g, group
-        let tagArray: string[] = []
-        while ((group = re.exec(tags + ',')) !== null) {
-            tagArray.push(group[1])
-        }
-        tagSections[0].tags = tagArray.map((elem: string) => createTag({id: elem, label: elem}))
+        tagSections[0].tags = tagArray.map((elem: string) => createTag({id: elem[0], label: elem[1]}))
         return createManga({
             id: mangaId,
             titles: [json.title],
@@ -20,8 +16,8 @@ export class Parser {
             desc: '',
             image: `${baseUrl}/api/archives/${mangaId}/thumbnail`,
             status: MangaStatus.ONGOING,
-            rating: this.getNSTag(tags, 'artist')[1]?.split('⭐').length - 1 ?? 0,
-            lastUpdate: json.isNew ? new Date(Date.now() - 604800000).toString() : undefined
+            rating: this.getNSTag(tags, 'rating')[1]?.split('⭐').length - 1 ?? 0,
+            lastUpdate: this.dateFromNSTag(tags).toString()
         })
     }
 
@@ -36,6 +32,7 @@ export class Parser {
                     group: this.getNSTag(tags, 'group')[1],
                     langCode: reverseLangCode[this.getNSTag(tags, 'language')[1] ?? language],
                     mangaId: mangaId,
+                    time: this.dateFromNSTag(tags)
                 }))
             }
         }
@@ -78,19 +75,22 @@ export class Parser {
 
     // UTILITY METHODS
 
-    getNSTag(tags: string[], tag: string): string[] {
-        let NSTags: string[] = []
+    getNSTag(tags: string[], tag?: string, getAll?: boolean): any {
+        let NSTags: string[][] = []
         for(let tagString of tags){
             let NSTag = tagString?.split(',') ?? []
+            if(!NSTag) continue
             for (let index of NSTag) {
                 if (index.includes(':')) {
                     let temp: string[] = index.trim().split(":", 2).map(c => c?.trim())
-                    if (temp[0] == tag && temp.length > 1) NSTags = NSTags.concat(temp)
+                    if ((temp[0] == tag && NSTags.length === 0) || getAll) NSTags.push(temp)
                 }
             }
         }
-        return NSTags
+        return getAll ? NSTags : NSTags[0] ?? [undefined, undefined]
     }
+
+    dateFromNSTag = (tags: string[]): Date => new Date(Number(this.getNSTag(tags, 'date_added')[1]?.padEnd(13, '0')))
 
     isLastPage(json: any): boolean {
         return json.length > 0

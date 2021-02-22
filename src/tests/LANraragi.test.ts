@@ -10,7 +10,7 @@ describe('LANraragi Tests', function () {
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
 
-    var mangaId = "28697b96f0ac5858be2614ed10ca47742c9522fd";
+    var mangaId = "3a3308d0eb3869c525eaddca3b767b0a3683f708";
 
     before(async function () {
         // This will run before ANY test. Set your state values here

@@ -252,7 +252,7 @@ export class LANraragi extends Source {
         let APIKey = this.constructAPI(form['APIKey'])
         let headers: { [key: string]: any } = {}
         // Set authorization header
-        if(!APIKey.isEmpty) headers['authorization'] = APIKey.key
+        if (!APIKey.isEmpty) headers['authorization'] = APIKey.key
 
         let responseStatus
         let json
@@ -266,7 +266,8 @@ export class LANraragi extends Source {
             const response = await this.requestManager.schedule(request, 1)
             responseStatus = response.status
             json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
-        } catch (error) {}
+        } catch (error) {
+        }
         switch (responseStatus) {
             case 200: {
                 if (json.nofun_mode) break
@@ -290,7 +291,7 @@ export class LANraragi extends Source {
 
     constructAPI(APIKey: string): { key: string, isEmpty: boolean } {
         return {
-            key: `Bearer ${this.base64Encode(APIKey)}`,
+            key: `Bearer ${this.base64Encode(APIKey.trim())}`,
             isEmpty: (APIKey ?? '') == ''
         }
     }
@@ -313,21 +314,21 @@ export class LANraragi extends Source {
         const baseUrl = await this.getServerAddress()
         const APIKey = await this.getAPI()
         let promises: Promise<void>[] = []
-        const plugins = ['DateAddedPlugin', 'ezeplugin', 'koromoplugin']
+        const plugins = ['ezeplugin', 'DateAddedPlugin', 'koromoplugin', 'Hdoujinplugin', 'nhplugin']
         let tags: string[] = []
-        if(!APIKey.isEmpty) {
-        for (let plugin of plugins) {
-            const request = createRequestObject({
-                url: `${baseUrl}/api/plugins/use`,
-                method: 'POST',
-                headers: await this.constructHeaders({}),
-                param: `?key=${APIKey.key}&plugin=${plugin}&id=${mangaId}`
-            })
-            promises.push(this.requestManager.schedule(request, 1).then(response => {
-                let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
-                tags.push(json.data?.new_tags?.trim())
-            }))
-        }
+        if (!APIKey.isEmpty) {
+            for (let plugin of plugins) {
+                const request = createRequestObject({
+                    url: `${baseUrl}/api/plugins/use`,
+                    method: 'POST',
+                    headers: await this.constructHeaders({}),
+                    param: `?key=${APIKey.key}&plugin=${plugin}&id=${mangaId}`
+                })
+                promises.push(this.requestManager.schedule(request, 1).then(response => {
+                    let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
+                    tags.push(json.data?.new_tags?.trim())
+                }))
+            }
         }
         const tagRequest = createRequestObject({
             url: `${baseUrl}/api/archives/${mangaId}/metadata`,
