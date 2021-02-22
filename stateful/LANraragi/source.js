@@ -2628,7 +2628,8 @@ class LANraragi extends paperback_extensions_common_1.Source {
                 responseStatus = response.status;
                 json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
             }
-            catch (error) { }
+            catch (error) {
+            }
             switch (responseStatus) {
                 case 200: {
                     if (json.nofun_mode)
@@ -2649,7 +2650,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
     }
     constructAPI(APIKey) {
         return {
-            key: `Bearer ${this.base64Encode(APIKey)}`,
+            key: `Bearer ${this.base64Encode(APIKey.trim())}`,
             isEmpty: (APIKey !== null && APIKey !== void 0 ? APIKey : '') == ''
         };
     }
@@ -2667,7 +2668,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
             const baseUrl = yield this.getServerAddress();
             const APIKey = yield this.getAPI();
             let promises = [];
-            const plugins = ['DateAddedPlugin', 'ezeplugin', 'koromoplugin'];
+            const plugins = ['ezeplugin', 'DateAddedPlugin', 'koromoplugin', 'Hdoujinplugin', 'nhplugin'];
             let tags = [];
             if (!APIKey.isEmpty) {
                 for (let plugin of plugins) {
@@ -2774,15 +2775,14 @@ exports.Parser = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Languages_1 = require("./Languages");
 class Parser {
+    constructor() {
+        this.dateFromNSTag = (tags) => { var _a; return new Date(Number((_a = this.getNSTag(tags, 'date_added')[1]) === null || _a === void 0 ? void 0 : _a.padEnd(13, '0'))); };
+    }
     parseMangaDetails(json, mangaId, tags, baseUrl) {
         var _a, _b;
+        let tagArray = this.getNSTag(tags, undefined, true);
         const tagSections = [createTagSection({ id: '0', label: 'genres', tags: [] })];
-        let re = /[: ]([^,:]*),/g, group;
-        let tagArray = [];
-        while ((group = re.exec(tags + ',')) !== null) {
-            tagArray.push(group[1]);
-        }
-        tagSections[0].tags = tagArray.map((elem) => createTag({ id: elem, label: elem }));
+        tagSections[0].tags = tagArray.map((elem) => createTag({ id: elem[0], label: elem[1] }));
         return createManga({
             id: mangaId,
             titles: [json.title],
@@ -2792,8 +2792,8 @@ class Parser {
             desc: '',
             image: `${baseUrl}/api/archives/${mangaId}/thumbnail`,
             status: paperback_extensions_common_1.MangaStatus.ONGOING,
-            rating: (_b = ((_a = this.getNSTag(tags, 'artist')[1]) === null || _a === void 0 ? void 0 : _a.split('⭐').length) - 1) !== null && _b !== void 0 ? _b : 0,
-            lastUpdate: json.isNew ? new Date(Date.now() - 604800000).toString() : undefined
+            rating: (_b = ((_a = this.getNSTag(tags, 'rating')[1]) === null || _a === void 0 ? void 0 : _a.split('⭐').length) - 1) !== null && _b !== void 0 ? _b : 0,
+            lastUpdate: this.dateFromNSTag(tags).toString()
         });
     }
     parseChapters(json, mangaId, tags, language) {
@@ -2808,6 +2808,7 @@ class Parser {
                     group: this.getNSTag(tags, 'group')[1],
                     langCode: Languages_1.reverseLangCode[(_d = this.getNSTag(tags, 'language')[1]) !== null && _d !== void 0 ? _d : language],
                     mangaId: mangaId,
+                    time: this.dateFromNSTag(tags)
                 }));
             }
         }
@@ -2847,20 +2848,22 @@ class Parser {
         return (results);
     }
     // UTILITY METHODS
-    getNSTag(tags, tag) {
-        var _a;
+    getNSTag(tags, tag, getAll) {
+        var _a, _b;
         let NSTags = [];
         for (let tagString of tags) {
             let NSTag = (_a = tagString === null || tagString === void 0 ? void 0 : tagString.split(',')) !== null && _a !== void 0 ? _a : [];
+            if (!NSTag)
+                continue;
             for (let index of NSTag) {
                 if (index.includes(':')) {
                     let temp = index.trim().split(":", 2).map(c => c === null || c === void 0 ? void 0 : c.trim());
-                    if (temp[0] == tag && temp.length > 1)
-                        NSTags = NSTags.concat(temp);
+                    if ((temp[0] == tag && NSTags.length === 0) || getAll)
+                        NSTags.push(temp);
                 }
             }
         }
-        return NSTags;
+        return getAll ? NSTags : (_b = NSTags[0]) !== null && _b !== void 0 ? _b : [undefined, undefined];
     }
     isLastPage(json) {
         return json.length > 0;
