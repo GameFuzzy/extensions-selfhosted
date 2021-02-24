@@ -51,7 +51,7 @@ export class LANraragi extends Source {
         const request = createRequestObject({
             url: `${baseUrl}/api/archives/${mangaId}/metadata`,
             method: 'GET',
-            headers: await this.constructHeaders({})
+            headers: await this.constructHeaders()
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -65,7 +65,7 @@ export class LANraragi extends Source {
         const request = createRequestObject({
             url: `${baseUrl}/api/archives`,
             method: 'GET',
-            headers: await this.constructHeaders({})
+            headers: await this.constructHeaders()
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -85,7 +85,7 @@ export class LANraragi extends Source {
                 request: createRequestObject({
                     url: `${baseUrl}/api/archives/${chapterId}/extract`,
                     method: 'POST',
-                    headers: await this.constructHeaders({})
+                    headers: await this.constructHeaders()
                 })
             },
             // Delete "NEW" flag
@@ -94,7 +94,7 @@ export class LANraragi extends Source {
                 request: createRequestObject({
                     url: `${baseUrl}/api/archives/${chapterId}/isnew`,
                     method: 'DELETE',
-                    headers: await this.constructHeaders({})
+                    headers: await this.constructHeaders()
                 })
             },
         ]
@@ -115,7 +115,7 @@ export class LANraragi extends Source {
             url: `${baseUrl}/api/search`,
             method: 'GET',
             param: `?filter=${encodeURIComponent(query.title ?? '')}`,
-            headers: await this.constructHeaders({})
+            headers: await this.constructHeaders()
         })
         const response = await this.requestManager.schedule(request, 1)
         const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
@@ -133,7 +133,7 @@ export class LANraragi extends Source {
                 request: createRequestObject({
                     url: `${baseUrl}/api/search?`,
                     method: 'GET',
-                    headers: await this.constructHeaders({})
+                    headers: await this.constructHeaders()
                 }),
                 section: createHomeSection({
                     id: '0',
@@ -145,7 +145,7 @@ export class LANraragi extends Source {
                 request: createRequestObject({
                     url: `${baseUrl}/api/search?newonly=true`,
                     method: 'GET',
-                    headers: await this.constructHeaders({})
+                    headers: await this.constructHeaders()
                 }),
                 section: createHomeSection({
                     id: '1',
@@ -194,7 +194,7 @@ export class LANraragi extends Source {
         const request = createRequestObject({
             url: `${baseUrl}/${sortBy}`,
             method: 'GET',
-            headers: await this.constructHeaders({})
+            headers: await this.constructHeaders()
         })
         let response = await this.requestManager.schedule(request, 1)
         const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
@@ -321,7 +321,7 @@ export class LANraragi extends Source {
                 const request = createRequestObject({
                     url: `${baseUrl}/api/plugins/use`,
                     method: 'POST',
-                    headers: await this.constructHeaders({}),
+                    headers: await this.constructHeaders(),
                     param: `?key=${APIKey.key}&plugin=${plugin}&id=${mangaId}`
                 })
                 promises.push(this.requestManager.schedule(request, 1).then(response => {
@@ -333,7 +333,7 @@ export class LANraragi extends Source {
         const tagRequest = createRequestObject({
             url: `${baseUrl}/api/archives/${mangaId}/metadata`,
             method: 'GET',
-            headers: await this.constructHeaders({})
+            headers: await this.constructHeaders()
         })
         promises.push(this.requestManager.schedule(tagRequest, 1).then(response => {
             let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data
@@ -352,7 +352,8 @@ export class LANraragi extends Source {
         return headers
     }
 
-    async constructHeaders(headers: { [key: string]: any }): Promise<{ [key: string]: any }> {
+    async constructHeaders(headers?: { [key: string]: any }): Promise<{ [key: string]: any }> {
+        headers = headers ?? {}
         if (!(await this.getAPI()).isEmpty) {
             headers["authorization"] = (await this.getAPI()).key
         }
