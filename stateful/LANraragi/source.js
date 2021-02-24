@@ -2414,7 +2414,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${baseUrl}/api/archives/${mangaId}/metadata`,
                 method: 'GET',
-                headers: yield this.constructHeaders({})
+                headers: yield this.constructHeaders()
             });
             const response = yield this.requestManager.schedule(request, 1);
             const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
@@ -2428,7 +2428,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${baseUrl}/api/archives`,
                 method: 'GET',
-                headers: yield this.constructHeaders({})
+                headers: yield this.constructHeaders()
             });
             const response = yield this.requestManager.schedule(request, 1);
             const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
@@ -2447,7 +2447,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                     request: createRequestObject({
                         url: `${baseUrl}/api/archives/${chapterId}/extract`,
                         method: 'POST',
-                        headers: yield this.constructHeaders({})
+                        headers: yield this.constructHeaders()
                     })
                 },
                 // Delete "NEW" flag
@@ -2456,7 +2456,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                     request: createRequestObject({
                         url: `${baseUrl}/api/archives/${chapterId}/isnew`,
                         method: 'DELETE',
-                        headers: yield this.constructHeaders({})
+                        headers: yield this.constructHeaders()
                     })
                 },
             ];
@@ -2479,7 +2479,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                 url: `${baseUrl}/api/search`,
                 method: 'GET',
                 param: `?filter=${encodeURIComponent((_a = query.title) !== null && _a !== void 0 ? _a : '')}`,
-                headers: yield this.constructHeaders({})
+                headers: yield this.constructHeaders()
             });
             const response = yield this.requestManager.schedule(request, 1);
             const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
@@ -2497,7 +2497,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                     request: createRequestObject({
                         url: `${baseUrl}/api/search?`,
                         method: 'GET',
-                        headers: yield this.constructHeaders({})
+                        headers: yield this.constructHeaders()
                     }),
                     section: createHomeSection({
                         id: '0',
@@ -2509,7 +2509,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                     request: createRequestObject({
                         url: `${baseUrl}/api/search?newonly=true`,
                         method: 'GET',
-                        headers: yield this.constructHeaders({})
+                        headers: yield this.constructHeaders()
                     }),
                     section: createHomeSection({
                         id: '1',
@@ -2554,7 +2554,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
             const request = createRequestObject({
                 url: `${baseUrl}/${sortBy}`,
                 method: 'GET',
-                headers: yield this.constructHeaders({})
+                headers: yield this.constructHeaders()
             });
             let response = yield this.requestManager.schedule(request, 1);
             const json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
@@ -2675,7 +2675,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
                     const request = createRequestObject({
                         url: `${baseUrl}/api/plugins/use`,
                         method: 'POST',
-                        headers: yield this.constructHeaders({}),
+                        headers: yield this.constructHeaders(),
                         param: `?key=${APIKey.key}&plugin=${plugin}&id=${mangaId}`
                     });
                     promises.push(this.requestManager.schedule(request, 1).then(response => {
@@ -2688,7 +2688,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
             const tagRequest = createRequestObject({
                 url: `${baseUrl}/api/archives/${mangaId}/metadata`,
                 method: 'GET',
-                headers: yield this.constructHeaders({})
+                headers: yield this.constructHeaders()
             });
             promises.push(this.requestManager.schedule(tagRequest, 1).then(response => {
                 let json = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
@@ -2710,6 +2710,7 @@ class LANraragi extends paperback_extensions_common_1.Source {
     }
     constructHeaders(headers) {
         return __awaiter(this, void 0, void 0, function* () {
+            headers = headers !== null && headers !== void 0 ? headers : {};
             if (!(yield this.getAPI()).isEmpty) {
                 headers["authorization"] = (yield this.getAPI()).key;
             }
