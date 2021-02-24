@@ -1,10 +1,8 @@
 import cheerio from 'cheerio'
-import { Source } from 'paperback-extensions-common'
-import { LANraragi } from '../LANraragi/LANraragi'
-import { APIWrapper } from "paperback-extensions-common";
+import {APIWrapper, Source} from 'paperback-extensions-common'
+import {LANraragi} from '../LANraragi/LANraragi'
 
 describe('LANraragi Tests', function () {
-
 
     var wrapper: APIWrapper = new APIWrapper();
     var source: Source = new LANraragi(cheerio);
@@ -12,12 +10,14 @@ describe('LANraragi Tests', function () {
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
 
-    /**
-     * The Manga ID which this unit test uses to Madara it's details off of.
-     * Try to choose a manga which is updated frequently, so that the historical checking test can
-     * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
-     */
-    var mangaId = "fa74bc15e7dd2b6ec0dc2e10cc7cd4942867318a";
+    var mangaId = "3a3308d0eb3869c525eaddca3b767b0a3683f708";
+
+    before(async function () {
+        // This will run before ANY test. Set your state values here
+        await source.stateManager.store("serverAddress", "192.168.1.97:3000") // Or whatever your endpoint is
+        await source.stateManager.store("APIKey", "bruh12345")
+        await source.stateManager.store("language", "English")
+    })
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, mangaId);
@@ -69,13 +69,13 @@ describe('LANraragi Tests', function () {
         expect(result.subtitleText, "No subtitle text").to.be.not.null;
     });
 
-    it("Testing Home-Page aquisition", async() => {
+    it("Testing Home-Page aquisition", async () => {
         let homePages = await wrapper.getHomePageSections(source)
         expect(homePages, "No response from server").to.exist
     })
 
 
-    it("Testing home page results for latest titles", async() => {
+    it("Testing home page results for latest titles", async () => {
         let results = await wrapper.getViewMoreItems(source, "0", {}, 3)
 
         expect(results, "No results whatsoever for this section").to.exist
